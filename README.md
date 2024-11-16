@@ -6,4 +6,4 @@ This "fork" is not a conventional Github fork, it's only copies of those package
 
 ## Purpose
 
-The purpose of this library, mainly, is to solve [another issue](https://github.com/otaxhu/problem/issues/14) of [another repository](https://github.com/otaxhu/problem), I thought it could be more useful if it is decoupled of that repository.
+The purpose of this library, mainly, is to solve [another issue](https://github.com/otaxhu/problem/issues/14) of another repository (https://github.com/otaxhu/problem), I thought it could be more useful if it is decoupled of that repository.
