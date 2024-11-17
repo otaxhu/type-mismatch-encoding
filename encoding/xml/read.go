@@ -300,7 +300,7 @@ func (d *Decoder) unmarshalAttr(val reflect.Value, attr Attr) error {
 		return nil
 	}
 
-	return copyValue(val, []byte(attr.Value))
+	return d.copyValue(val, []byte(attr.Value))
 }
 
 var (
@@ -595,7 +595,7 @@ Loop:
 		}
 	}
 
-	if err := copyValue(saveData, data); err != nil {
+	if err := d.copyValue(saveData, data); err != nil {
 		return err
 	}
 
@@ -618,7 +618,7 @@ Loop:
 	return nil
 }
 
-func copyValue(dst reflect.Value, src []byte) (err error) {
+func (d *Decoder) copyValue(dst reflect.Value, src []byte) (err error) {
 	dst0 := dst
 
 	if dst.Kind() == reflect.Pointer {
@@ -641,6 +641,9 @@ func copyValue(dst reflect.Value, src []byte) (err error) {
 		}
 		itmp, err := strconv.ParseInt(strings.TrimSpace(string(src)), 10, dst.Type().Bits())
 		if err != nil {
+			if d.AllowTypeMismatch {
+				return nil
+			}
 			return err
 		}
 		dst.SetInt(itmp)
@@ -651,6 +654,9 @@ func copyValue(dst reflect.Value, src []byte) (err error) {
 		}
 		utmp, err := strconv.ParseUint(strings.TrimSpace(string(src)), 10, dst.Type().Bits())
 		if err != nil {
+			if d.AllowTypeMismatch {
+				return nil
+			}
 			return err
 		}
 		dst.SetUint(utmp)
@@ -661,6 +667,9 @@ func copyValue(dst reflect.Value, src []byte) (err error) {
 		}
 		ftmp, err := strconv.ParseFloat(strings.TrimSpace(string(src)), dst.Type().Bits())
 		if err != nil {
+			if d.AllowTypeMismatch {
+				return nil
+			}
 			return err
 		}
 		dst.SetFloat(ftmp)
@@ -671,6 +680,9 @@ func copyValue(dst reflect.Value, src []byte) (err error) {
 		}
 		value, err := strconv.ParseBool(strings.TrimSpace(string(src)))
 		if err != nil {
+			if d.AllowTypeMismatch {
+				return nil
+			}
 			return err
 		}
 		dst.SetBool(value)

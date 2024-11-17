@@ -197,6 +197,15 @@ type Decoder struct {
 	// the attribute xmlns="DefaultSpace".
 	DefaultSpace string
 
+	// EXPERIMENTAL FUNCTION:
+	// Please see https://github.com/otaxhu/problem/issues/14
+	//
+	// AllowTypeMismatch when true, causes the Decoder to not return an error when the
+	// input contains a XML value that does not match the type of the destination value.
+	//
+	// The destination value remains unmodified if the types does not match.
+	AllowTypeMismatch bool
+
 	r              io.ByteReader
 	t              TokenReader
 	buf            bytes.Buffer
