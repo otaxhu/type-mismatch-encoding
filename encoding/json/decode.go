@@ -781,7 +781,16 @@ func (d *decodeState) object(v reflect.Value) error {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 					s := string(key)
 					n, err := strconv.ParseInt(s, 10, 64)
-					if err != nil || kt.OverflowInt(n) {
+					if kt.OverflowInt(n) {
+						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})
+						break
+					}
+					if err != nil {
+						// got a float64, we report the error only if it doesn't allows type
+						// mismatch
+						if d.allowTypeMismatch {
+							break
+						}
 						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})
 						break
 					}
@@ -790,7 +799,16 @@ func (d *decodeState) object(v reflect.Value) error {
 				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 					s := string(key)
 					n, err := strconv.ParseUint(s, 10, 64)
-					if err != nil || kt.OverflowUint(n) {
+					if kt.OverflowUint(n) {
+						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})
+						break
+					}
+					if err != nil {
+						// got a float64 or negative integer, we report the error only if it
+						// doesn't allow type mismatch
+						if d.allowTypeMismatch {
+							break
+						}
 						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})
 						break
 					}
@@ -1012,7 +1030,15 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			n, err := strconv.ParseInt(string(item), 10, 64)
-			if err != nil || v.OverflowInt(n) {
+			if v.OverflowInt(n) {
+				d.saveError(&UnmarshalTypeError{Value: "number " + string(item), Type: v.Type(), Offset: int64(d.readIndex())})
+				break
+			}
+			if err != nil {
+				// got a float64, we report the error only if it doesn't allow type mismatch
+				if d.allowTypeMismatch {
+					break
+				}
 				d.saveError(&UnmarshalTypeError{Value: "number " + string(item), Type: v.Type(), Offset: int64(d.readIndex())})
 				break
 			}
@@ -1020,7 +1046,16 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 			n, err := strconv.ParseUint(string(item), 10, 64)
-			if err != nil || v.OverflowUint(n) {
+			if v.OverflowUint(n) {
+				d.saveError(&UnmarshalTypeError{Value: "number " + string(item), Type: v.Type(), Offset: int64(d.readIndex())})
+				break
+			}
+			if err != nil {
+				// got a float64 or negative integer, we report the error whether it doesn't
+				// allow type mismatch
+				if d.allowTypeMismatch {
+					break
+				}
 				d.saveError(&UnmarshalTypeError{Value: "number " + string(item), Type: v.Type(), Offset: int64(d.readIndex())})
 				break
 			}

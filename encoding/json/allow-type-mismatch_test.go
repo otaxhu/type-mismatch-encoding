@@ -110,6 +110,27 @@ func TestAllowTypeMismatchDecode(t *testing.T) {
 			expectingError: false,
 		},
 		{
+			CaseName: Name("MismatchedType_Int_GotFloat64"),
+			input: `
+				{
+					"string": "test",
+					"int": 123.123,
+					"float64": 123.123,
+					"object": {"foo": "bar"},
+					"slice": [
+						1,
+						2,
+						3
+					]
+				}
+			`,
+			expectedT: func() T {
+				ret := baseT
+				ret.Int = 0
+				return ret
+			},
+		},
+		{
 			CaseName: Name("MismatchedType_Float64"),
 			input: `
 				{
