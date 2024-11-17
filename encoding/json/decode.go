@@ -217,6 +217,7 @@ type decodeState struct {
 	savedError            error
 	useNumber             bool
 	disallowUnknownFields bool
+	allowTypeMismatch     bool
 }
 
 // readIndex returns the position of the last byte read.
@@ -525,7 +526,9 @@ func (d *decodeState) array(v reflect.Value) error {
 		// Otherwise it's invalid.
 		fallthrough
 	default:
-		d.saveError(&UnmarshalTypeError{Value: "array", Type: v.Type(), Offset: int64(d.off)})
+		if !d.allowTypeMismatch {
+			d.saveError(&UnmarshalTypeError{Value: "array", Type: v.Type(), Offset: int64(d.off)})
+		}
 		d.skip()
 		return nil
 	case reflect.Array, reflect.Slice:
@@ -646,7 +649,9 @@ func (d *decodeState) object(v reflect.Value) error {
 		fields = cachedTypeFields(t)
 		// ok
 	default:
-		d.saveError(&UnmarshalTypeError{Value: "object", Type: t, Offset: int64(d.off)})
+		if !d.allowTypeMismatch {
+			d.saveError(&UnmarshalTypeError{Value: "object", Type: t, Offset: int64(d.off)})
+		}
 		d.skip()
 		return nil
 	}
@@ -904,7 +909,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 		}
 		switch v.Kind() {
 		default:
-			if fromQuoted {
+			if d.allowTypeMismatch {
+				break // ignore type mismatch
+			} else if fromQuoted {
 				d.saveError(fmt.Errorf("json: invalid use of ,string struct tag, trying to unmarshal %q into %v", item, v.Type()))
 			} else {
 				d.saveError(&UnmarshalTypeError{Value: "bool", Type: v.Type(), Offset: int64(d.readIndex())})
@@ -914,6 +921,8 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 		case reflect.Interface:
 			if v.NumMethod() == 0 {
 				v.Set(reflect.ValueOf(value))
+			} else if d.allowTypeMismatch {
+				break // ignore type mismatch
 			} else {
 				d.saveError(&UnmarshalTypeError{Value: "bool", Type: v.Type(), Offset: int64(d.readIndex())})
 			}
@@ -929,9 +938,15 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 		}
 		switch v.Kind() {
 		default:
+			if d.allowTypeMismatch {
+				break // ignore type mismatch
+			}
 			d.saveError(&UnmarshalTypeError{Value: "string", Type: v.Type(), Offset: int64(d.readIndex())})
 		case reflect.Slice:
 			if v.Type().Elem().Kind() != reflect.Uint8 {
+				if d.allowTypeMismatch {
+					break // ignore type mismatch
+				}
 				d.saveError(&UnmarshalTypeError{Value: "string", Type: v.Type(), Offset: int64(d.readIndex())})
 				break
 			}
@@ -951,6 +966,8 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 		case reflect.Interface:
 			if v.NumMethod() == 0 {
 				v.Set(reflect.ValueOf(string(s)))
+			} else if d.allowTypeMismatch {
+				break // ignore type mismatch
 			} else {
 				d.saveError(&UnmarshalTypeError{Value: "string", Type: v.Type(), Offset: int64(d.readIndex())})
 			}
@@ -974,6 +991,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			if fromQuoted {
 				return fmt.Errorf("json: invalid use of ,string struct tag, trying to unmarshal %q into %v", item, v.Type())
 			}
+			if d.allowTypeMismatch {
+				break // ignore type mismatch
+			}
 			d.saveError(&UnmarshalTypeError{Value: "number", Type: v.Type(), Offset: int64(d.readIndex())})
 		case reflect.Interface:
 			n, err := d.convertNumber(string(item))
@@ -982,6 +1002,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 				break
 			}
 			if v.NumMethod() != 0 {
+				if d.allowTypeMismatch {
+					break // ignore type mismatch
+				}
 				d.saveError(&UnmarshalTypeError{Value: "number", Type: v.Type(), Offset: int64(d.readIndex())})
 				break
 			}

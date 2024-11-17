@@ -41,6 +41,16 @@ func (dec *Decoder) UseNumber() { dec.d.useNumber = true }
 // non-ignored, exported fields in the destination.
 func (dec *Decoder) DisallowUnknownFields() { dec.d.disallowUnknownFields = true }
 
+// EXPERIMENTAL FUNCTION:
+// This function is related to another issue in another repository,
+// please see: https://github.com/otaxhu/problem/issues/14
+//
+// AllowTypeMismatch causes the Decoder to not return an error when the
+// input contains a JSON value that does not match the type of the destination value.
+//
+// The destination value remains unmodified if the types does not match.
+func (dec *Decoder) AllowTypeMismatch() { dec.d.allowTypeMismatch = true }
+
 // Decode reads the next JSON-encoded value from its
 // input and stores it in the value pointed to by v.
 //
