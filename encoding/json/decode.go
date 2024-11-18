@@ -927,11 +927,12 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 		}
 		switch v.Kind() {
 		default:
-			if d.allowTypeMismatch {
-				break // ignore type mismatch
-			} else if fromQuoted {
+			if fromQuoted {
 				d.saveError(fmt.Errorf("json: invalid use of ,string struct tag, trying to unmarshal %q into %v", item, v.Type()))
 			} else {
+				if d.allowTypeMismatch {
+					break // ignore type mismatch
+				}
 				d.saveError(&UnmarshalTypeError{Value: "bool", Type: v.Type(), Offset: int64(d.readIndex())})
 			}
 		case reflect.Bool:
